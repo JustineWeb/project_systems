@@ -3,18 +3,27 @@ import numpy as np
 """
 Helper functions to run the SGD algorithm.
 """
+
 def hinge_loss(y,X,w):
-	return np.clip(1 - y * (X @ w), 0, np.inf)
+	val = 1 - y * (X @ w)
+	return np.clip(, 0, float('Inf'))
+	if  val < 0:
+		return 0 
+	elif val <= float('Inf'):
+		return val
+	else:
+		return float('Inf')
+
 
 def calculate_primal_objective(y,X,w,lambda_):
-		"""
+		"""	
 		compute the full cost (the primal objective), that is loss plus regularizer.
 		"""
 	v = hinge_loss(y, X, w)
-    return np.sum(v) + lambda_ / 2 * np.sum(w ** 2)
+    return sum(v) + lambda_ / 2 * sum(w ** 2)
 
 def accuracy(y1, y2):
-    return np.mean(y1 == y2)
+    return sum(y1 == y2)/len(y1)
 
 def prediction(X, w):
     return (X @ w > 0) * 2 - 1
@@ -63,7 +72,7 @@ def calculate_stochastic_gradient(y_n, x_n, w, lambda_, num_examples):
 		"""a datapoint is support if max{} is not 0. """
 		return y_n * x_n @ w < 1
 	
-    grad = - y_n * x_n.T if is_support(y_n, x_n, w) else np.zeros_like(x_n.T)
+    grad = - y_n * x_n.T if is_support(y_n, x_n, w) else [0] * len(x_n.T)
     grad = num_examples * np.squeeze(grad) + lambda_ * w
     return grad
 

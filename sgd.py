@@ -5,8 +5,6 @@ import sys
 from pyspark.sql import SparkSession
 from pyspark.context import SparkContext
 
-import numpy as np
-
 import helpers
 import data
 
@@ -44,11 +42,12 @@ if __name__ == "__main__":
     data_train, labels_train = data.load_data(sc)
 
     # init weight vectors
-    w = np.zeros(len(data_train[0]))
+    w = [0] * len(data_train[0]) 
     num_examples = data_train.shape[0]
+    lambda_ = 0.001
 
     #full data
-    training = np.zip(data_train,labels_train)
+    training = zip(data_train,labels_train)
     
     # training
     for i in range(n_iterations):
@@ -60,7 +59,4 @@ if __name__ == "__main__":
         print "Iteration %d:" % (i + 1)
         print "Model: "
         print sgd
-        print ""
-
-    
-    
+        print ""    
