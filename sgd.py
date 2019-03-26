@@ -44,7 +44,18 @@ if __name__ == "__main__":
     # TODO : preprocess file.
     data = None
 
+    # init stochastic gradient descent
+    sgd = lm.SGDClassifier(loss='log') #TODO : change this
     
+    # training
+    for i in range(n_iterations):
+        sgd = sc.parallelize(data, numSlices=n_workers).mapPartitions(lambda x: train(x, sgd)).reduce(lambda x, y: merge(x, y))
+        sgd = avg_model(sgd, slices) # averaging weight vector => iterative parameter mixtures
+        print "Iteration %d:" % (i + 1)
+        print "Model: "
+        print sgd.coef_
+        print sgd.intercept_
+        print ""
 
-
+    
     
