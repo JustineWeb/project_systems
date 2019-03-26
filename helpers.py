@@ -51,24 +51,23 @@ def batch_iter(y, tx, batch_size, num_batches=1, shuffle=True):
             yield shuffled_y[start_index:end_index], shuffled_tx[start_index:end_index]
 
 
-def calculate_stochastic_gradient(y, X, w, lambda_,batch_size, num_examples):
+def calculate_stochastic_gradient(y_n, x_n, w, lambda_, num_examples):
     """compute the stochastic gradient of loss plus regularizer.
     X: the dataset matrix, shape = (num_examples, num_features)
     y: the corresponding +1 or -1 labels, shape = (num_examples)
     w: shape = (num_features)
     num_examples: N
     """
+
 	def is_support(y_n, x_n, w):
 		"""a datapoint is support if max{} is not 0. """
 		return y_n * x_n @ w < 1
 	
-	gradient = 0
+    grad = - y_n * x_n.T if is_support(y_n, x_n, w) else np.zeros_like(x_n.T)
+    grad = num_examples * np.squeeze(grad) + lambda_ * w
+    return grad
 
-	for y_batch, tx_batch in batch_iter(y, tx, batch_size=batch_size, num_batches=1):
-		for x,y in tx_batch, y_batch:
-			grad = - y * x.T if is_support(y, x, w) else np.zeros_like(x.T)
-			grad = num_examples * np.squeeze(grad) + lambda_ * w
-			gradient += grad
-    
-    return gradient/batch_size
+def avg_model(sgd, slices):
+    sgd/= slices
+    return sgd
    

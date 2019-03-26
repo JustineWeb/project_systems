@@ -8,6 +8,7 @@ from pyspark.context import SparkContext
 import numpy as np
 
 import helpers
+import data
 
 #logFile = "YOUR_SPARK_HOME/README.md"  # Should be some file on your system
 #spark = SparkSession.builder.appName("SimpleApp").getOrCreate()
@@ -39,22 +40,26 @@ if __name__ == "__main__":
     #sc = SparkContext(sys.argv[1], "PySparkSGD")
     sc = spark.SparkContext
 
-    #val rdd = ... ?
-    rdd = sc.textFile(data_path)
-    # TODO : preprocess file.
-    data = None
+    #load data
+    data_train, labels_train = data.load_data(sc)
 
-    # init stochastic gradient descent
-    sgd = lm.SGDClassifier(loss='log') #TODO : change this
+    # init weight vectors
+    w = np.zeros(len(data_train[0]))
+    num_examples = data_train.shape[0]
+
+    #full data
+    training = np.zip(data_train,labels_train)
     
     # training
     for i in range(n_iterations):
-        sgd = sc.parallelize(data, numSlices=n_workers).mapPartitions(lambda x: train(x, sgd)).reduce(lambda x, y: merge(x, y))
-        sgd = avg_model(sgd, slices) # averaging weight vector => iterative parameter mixtures
+    	#passer un zip de data et labels pour le passer dans parallelize
+        sgd = sc.parallelize(training, numSlices=n_workers) \
+        .mapPartitions(lambda (x,y): helpers.calculate_stochastic_gradient(y, x, w, lambda_, num_examples)) \
+        .reduce(lambda x, y: merge(x, y)) \
+        sgd = helpers.avg_model(sgd, slices) # averaging weight vector => iterative parameter mixtures
         print "Iteration %d:" % (i + 1)
         print "Model: "
-        print sgd.coef_
-        print sgd.intercept_
+        print sgd
         print ""
 
     
