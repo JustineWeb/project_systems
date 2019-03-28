@@ -54,8 +54,8 @@ if __name__ == "__main__":
     	#passer un zip de data et labels pour le passer dans parallelize
         sgd = sc.parallelize(training, numSlices=n_workers) \
         .mapPartitions(lambda (x,y): helpers.calculate_stochastic_gradient(y, x, w, lambda_, num_examples)) \
-        .reduce(lambda x, y: merge(x, y)) \
-        sgd = helpers.avg_model(sgd, slices) # averaging weight vector => iterative parameter mixtures
+        .reduce(lambda x, y: merge(x, y)).collect() \
+        w = helpers.avg_model(sgd, slices) # averaging weight vector => iterative parameter mixtures
         print "Iteration %d:" % (i + 1)
         print "Model: "
         print sgd
