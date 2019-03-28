@@ -4,8 +4,11 @@ import numpy as np
 Helper functions to run the SGD algorithm.
 """
 
-def hinge_loss(y,X,w):
-	val = 1 - y * (X @ w)
+def hinge_loss(y,x,w):
+	'''
+	Compute the value of the hinge loss
+	'''
+	val = 1 - y * (dot(x,w))
 	return np.clip(, 0, float('Inf'))
 	if  val < 0:
 		return 0 
@@ -13,20 +16,24 @@ def hinge_loss(y,X,w):
 		return val
 	else:
 		return float('Inf')
+def dot(x,y):
+	dot = 0 
+	for i in range(len(x)):
+		dot += x[i]*y[i]
+	return dot
 
-
-def calculate_primal_objective(y,X,w,lambda_):
-		"""	
-		compute the full cost (the primal objective), that is loss plus regularizer.
-		"""
+def calculate_primal_objective(y,x,w,lambda_):
+	"""	
+	compute the full cost (the primal objective), that is loss plus regularizer.
+	"""
 	v = hinge_loss(y, X, w)
     return sum(v) + lambda_ / 2 * sum(w ** 2)
 
 def accuracy(y1, y2):
     return sum(y1 == y2)/len(y1)
 
-def prediction(X, w):
-    return (X @ w > 0) * 2 - 1
+def prediction(x, w):
+    return (dot(x,w) > 0) * 2 - 1
 
 def calculate_accuracy(y, X, w):
     """compute the training accuracy on the training set (can be called for test set as well).
@@ -70,10 +77,10 @@ def calculate_stochastic_gradient(y_n, x_n, w, lambda_, num_examples):
 
 	def is_support(y_n, x_n, w):
 		"""a datapoint is support if max{} is not 0. """
-		return y_n * x_n @ w < 1
+		return y_n * dot(x_n,w) < 1
 	
-    grad = - y_n * x_n.T if is_support(y_n, x_n, w) else [0] * len(x_n.T)
-    grad = num_examples * np.squeeze(grad) + lambda_ * w
+    grad = - [x*y_n for x in x_n] if is_support(y_n, x_n, w) else [0] * len(x_n)
+    grad = num_examples * grad + lambda_ * w
     return grad
 
 def avg_model(sgd, slices):
