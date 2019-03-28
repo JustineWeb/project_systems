@@ -58,5 +58,5 @@ if __name__ == "__main__":
         w = helpers.avg_model(sgd, slices) # averaging weight vector => iterative parameter mixtures
         print "Iteration %d:" % (i + 1)
         print "Model: "
-        print sgd
+        print w
         print ""    
