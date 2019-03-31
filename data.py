@@ -22,19 +22,20 @@ def generate_dictionary(datapoint):
     return d
 
 
-def load_data(sc,data_ = data_train, topics_path=topics_files, selected_cat='CCAT'):
-	'''
-	Function to load the data (we are not using spark here but we could later on during the project)
-	sc : spark context
-	'''
-	rdd = sc.textFile(data_).map(line => line.strip("")).map(line => line.split(' '))
-	labels = rdd.map(line => int(line[0]))
-	data = rdd.map(line => generate_dictionary(line[2:]))
+def load_data(sc,data_ = data_train, topics_path=topic_files, selected_cat='CCAT'):
+    '''
+    Function to load the data (we are not using spark here but we could later on during the project)
+    sc : spark context
+    '''
+    rdd = sc.textFile(data_).map(lambda line: line.strip("")).map(lambda line: line.split(' '))
+    labels = rdd.map(lambda line: int(line[0]))
+    data = rdd.map(lambda line: generate_dictionary(line[2:]))
+    labels = labels.toLocalIterator()
 
     cat = get_category_dict(topics_path)
     labels = [1 if selected_cat in cat[label] else -1 for label in labels]
 
-	return data, labels
+    return data, labels
 
 def get_category_dict(topics_path):
     ''' Generates the category dictionary using the topics file from:

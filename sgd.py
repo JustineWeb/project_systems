@@ -1,9 +1,8 @@
 """SimpleApp.py"""
 
-import sys
-
 from pyspark.sql import SparkSession
 from pyspark.context import SparkContext
+from pyspark.mllib.linalg import SparseVector
 
 import helpers
 import data
@@ -24,7 +23,7 @@ import data
 if __name__ == "__main__":
 
     if len(sys.argv) != 4:
-        print("Usage: sgd <data_path> <num_iterations> <num_workers>", file=sys.stderr)
+        print("Usage: sgd <num_iterations> <num_workers>", file=sys.stderr)
         sys.exit(-1)
 
     # Get arguments
@@ -33,30 +32,46 @@ if __name__ == "__main__":
     n_workers = int(sys.argv[4])
 
     # Create Spark environment
-    spark = SparkSession.builder.appName("PySparkSGD").getOrCreate()
+    #spark = SparkSession.builder.appName("PySparkSGD").getOrCreate()
 
-    #sc = SparkContext(sys.argv[1], "PySparkSGD")
-    sc = spark.SparkContext
+    sc = SparkContext()
 
     #load data
     data_train, labels_train = data.load_data(sc)
+    data_train = data_train.collect()
 
-    # init weight vectors
-    w = [0] * len(data_train[0]) 
-    num_examples = data_train.shape[0]
+    #compute size of train vectors, m
+    m = 0
+    for i in range(len(data_train)):
+        if m < max(data_train[i],key=int):
+        m = max(data_train[i],key=int)
+    print(m)
+
+    # init weight vectors and data_train vectors from the dictionnary
+    data_train = [SparseVector(m+1,d) for d in data_train]
+    w = [0] * len(m+1) 
+    num_examples =  len(data_train)
     lambda_ = 0.001
-
-    #full data
-    training = zip(data_train,labels_train)
     
     # training
+    batch_size = 200
+    mini_batch_size = 10
     for i in range(n_iterations):
-    	#passer un zip de data et labels pour le passer dans parallelize
-        sgd = sc.parallelize(training, numSlices=n_workers) \
-        .mapPartitions(lambda (x,y): helpers.calculate_stochastic_gradient(y, x, w, lambda_, num_examples)) \
-        .reduce(lambda x, y: merge(x, y)).collect() \
-        w = helpers.avg_model(sgd, slices) # averaging weight vector => iterative parameter mixtures
-        print "Iteration %d:" % (i + 1)
-        print "Model: "
-        print w
-        print ""    
+        for j in range(batch_size):
+            x_batch, y_batch = helpers.batch_iter(data_train,labels_train,batch_size= mini_batch_size)
+            sgd = sc.parallelize(zip(x_batch,y_batch),numSlices= n_workers) \
+            .mapPartitions(lambda it: helpers.train(it,w)) \
+            .coalesce(n_workers)
+        sgd = sgd.reduce(lambda x,y: [a+b for a,b in zip(x,y)])
+        sgd = [elem/mini_batch_size for elem in sgd]
+        w = [x + y/batch_size for x,y in zip(w,sgd)]
+        print("Iteration %d:" % (i + 1))
+        print("Model: ")
+        print(w)
+        print ("")
+
+    """
+    1) validation score to compute ( can do it at all iteration) 
+    2) timer
+    3) test
+    """  
