@@ -3,12 +3,12 @@ helper functions to load the data
 """
 from pyspark.sql import SparkSession
 
-data_train = "/data/datasets/lyrl2004_vectors_train.dat"
-data_test_0 = "/data/datasets/lyrl2004_vectors_test_pt0.dat"
-data_test_1 = "/data/datasets/lyrl2004_vectors_test_pt1.dat"
-data_test_2 = "/data/datasets/lyrl2004_vectors_test_pt2.dat"
-data_test_3 = "/data/datasets/lyrl2004_vectors_test_pt3.dat"
-topic_files = "/data/datasets/rcv1-v2.topics.qrels"
+data_train = "datasets/lyrl2004_vectors_train.dat"
+data_test_0 = "datasets/lyrl2004_vectors_test_pt0.dat"
+data_test_1 = "datasets/lyrl2004_vectors_test_pt1.dat"
+data_test_2 = "datasets/lyrl2004_vectors_test_pt2.dat"
+data_test_3 = "datasets/lyrl2004_vectors_test_pt3.dat"
+topic_files = "datasets/rcv1-v2.topics.qrels"
 
 def generate_dictionary(datapoint):
     ''' 

@@ -6,6 +6,8 @@ from pyspark.mllib.linalg import SparseVector
 
 import helpers
 import data
+import random
+import time
 
 #logFile = "YOUR_SPARK_HOME/README.md"  # Should be some file on your system
 #spark = SparkSession.builder.appName("SimpleApp").getOrCreate()
@@ -37,8 +39,13 @@ if __name__ == "__main__":
     sc = SparkContext()
 
     #load data
-    data_train, labels_train = data.load_data(sc)
+    data_train, labels_train = load_data(sc)
+    data_test_0, labels_test_0 = load_data(sc, data_= data_test_0)
+    data_test_1, labels_test_1 = load_data(sc,data_= data_test_1)
+    
     data_train = data_train.collect()
+    data_test_0 = data_test_0.collect()
+    data_test_1 = data_test_1.collect()
 
     #compute size of train vectors, m
     m = 0
@@ -49,29 +56,53 @@ if __name__ == "__main__":
 
     # init weight vectors and data_train vectors from the dictionnary
     data_train = [SparseVector(m+1,d) for d in data_train]
-    w = [0] * len(m+1) 
-    num_examples =  len(data_train)
-    lambda_ = 0.001
+    data_test_0 = [SparseVector(m+1,d) for d in data_test_0]
+    data_test_1 = [SparseVector(m+1,d) for d in data_test_1]
+    
+    data_test = data_test_0 + data_test_1
+    labels_test = labels_test_0 + labels_test_1
+    
+    w = [0] * (m+1) 
+    num_examples = len(data_train)
+    n_workers = 5
+    lambda_ = 3/n_workers
     
     # training
-    batch_size = 200
-    mini_batch_size = 10
+    batch_size = 100 * n_workers
+    total_time = 0
     for i in range(n_iterations):
-        for j in range(batch_size):
-            x_batch, y_batch = helpers.batch_iter(data_train,labels_train,batch_size= mini_batch_size)
-            sgd = sc.parallelize(zip(x_batch,y_batch),numSlices= n_workers) \
-            .mapPartitions(lambda it: helpers.train(it,w)) \
-            .coalesce(n_workers)
-        sgd = sgd.reduce(lambda x,y: [a+b for a,b in zip(x,y)])
-        sgd = [elem/mini_batch_size for elem in sgd]
-        w = [x + y/batch_size for x,y in zip(w,sgd)]
-        print("Iteration %d:" % (i + 1))
-        print("Model: ")
-        print(w)
-        print ("")
+        print('we are at the iteration : {}'.format(i))
 
-    """
-    1) validation score to compute ( can do it at all iteration) 
-    2) timer
-    3) test
-    """  
+        # computing the gradient
+        start = time.time()
+        x_batch, y_batch = batch_iter(data_train,labels_train,batch_size= batch_size)
+        sgd = sc.parallelize(zip(x_batch,y_batch),numSlices= n_workers) \
+        .mapPartitions(lambda it: train(it,w)) \
+        .reduce(lambda x,y: [a+b for a,b in zip(x,y)])
+        w = [x + y/100 for x,y in zip(w,sgd)]
+        print(len(w) - w.count(0))
+        end = time.time()
+        print(end - start)
+        total_time += end - start
+        
+        print("compute train accuracy")
+        # computing the train accuracy
+        acc = sc.parallelize(zip(x_batch,y_batch), numSlices= n_workers) \
+        .mapPartitions(lambda it: prediction(it,w)) \
+        .mapPartitions(lambda it: accuracy(it)) \
+        .reduce(lambda x,y: x+y)
+        acc = acc/len(y_batch)
+        print('the model as achieved an accuracy of:')
+        print(acc)
+
+
+        print('computing test accuracy')
+        # computing the test accuracy
+        test_x_batch, test_y_batch = batch_iter(data_test,labels_test,batch_size= batch_size)
+        acc = sc.parallelize(zip(test_x_batch,test_y_batch), numSlices= n_workers) \
+        .mapPartitions(lambda it: prediction(it,w)) \
+        .mapPartitions(lambda it: accuracy(it)) \
+        .reduce(lambda x,y: x+y)
+        acc = acc/len(test_y_batch)
+        print('the model as achieved an accuracy of:')
+        print(acc)
