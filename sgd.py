@@ -173,6 +173,7 @@ if __name__ == "__main__":
 	# create the spark context
 	conf = SparkConf().setAppName("PySpark App")
 	sc = SparkContext(conf = conf)
+	sc.setLogLevel("Error")
 
 	# load the data
 	print('loading data')
