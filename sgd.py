@@ -165,7 +165,27 @@ def compute_loss(iterator,w,lambda_,batch_size):
 	loss = 0
 	for x in iterator:
 		loss += calculate_primal_objective(x[1],x[0],w,lambda_,batch_size)
-	yield loss 
+	yield loss
+
+def split_data(x, y, ratio, seed=1):
+	"""
+	split the dataset based on the split ratio. If ratio is 0.8 
+	you will have 80% of your data set dedicated to training 
+	and the rest dedicated to testing
+	"""
+	# set seed
+	random.seed(seed)
+	num_row = len(y)
+	xy = list(zip(x,y))
+	index_split = int(ratio * num_row)
+	random.shuffle(xy)
+	# create split
+	x,y = zip(*xy)
+	x_tr = x[:index_split]
+	x_te = x[index_split:]
+	y_tr = y[:index_split]
+	y_te = y[index_split:]
+	return x_tr, x_te, y_tr, y_te
 
 
 if __name__ == "__main__":
@@ -179,11 +199,16 @@ if __name__ == "__main__":
 	print('loading data')
 	data_train, labels_train = load_data(sc,data_= data_train)
 	data_train = data_train.collect()
+	score_train = []
+	score_validation = []
+	losses = []
+
+	x_train,x_test,y_train,y_test = split_data(data_train,labels_train,0.9)
 
 	# settings
 	w = {}
 	num_examples = 1
-	n_workers = 10
+	n_workers = 15
 	batch_per_worker = 100
 	batch_size = batch_per_worker * n_workers
 	lambda_ = 0.3 /batch_size
@@ -199,7 +224,7 @@ if __name__ == "__main__":
 
 		# computing the gradient step
 		start = time.time()
-		x_batch, y_batch = batch_iter(data_train,labels_train,batch_size= batch_size)
+		x_batch, y_batch = batch_iter(x_train,y_train,batch_size= batch_size)
 	    
 		sgd = sc.parallelize(zip(x_batch,y_batch),numSlices= n_workers) \
 		.mapPartitions(lambda it: train(it,w)) \
@@ -223,6 +248,7 @@ if __name__ == "__main__":
 			.reduce(lambda x,y: x+y)
 			print("the loss is:")
 			print(loss)
+			losses.append(loss)
 		except Exception:
 			pass
 
@@ -235,10 +261,29 @@ if __name__ == "__main__":
 		acc = float(acc)/float(batch_size)
 		print('the model as achieved an accuracy of:')
 		print(acc)
+		score_train.append(acc)
+
+
+		print('computing validation accuracy')
+		# computing the accuracy
+		acc = sc.parallelize(zip(x_test,y_test), numSlices= n_workers) \
+		.mapPartitions(lambda it: prediction(it,w)) \
+		.mapPartitions(lambda it: accuracy(it)) \
+		.reduce(lambda x,y: x+y)
+		acc = float(acc)/float(len(y_test))
+		print('the model as achieved an accuracy of:')
+		print(acc)
+		score_validation.append(acc)
 		print("######################################################################")
 	
 	# print the total time took by the algorithm and save the final weight vectors
 	print("Time in total")
 	print(total_time)
-	with open('/data/w10.txt','w') as data:
+	with open('/data/w15.txt','w') as data:
 		data.write(str(w))
+	with open('/data/losses15.txt','w') as data:
+		data.write(str(losses))
+	with open('/data/score_val15.txt','w') as data:
+		data.write(str(score_validation))
+	with open('/data/score_train15.txt','w') as data:
+		data.write(str(score_train))
