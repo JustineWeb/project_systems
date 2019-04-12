@@ -211,7 +211,7 @@ if __name__ == "__main__":
 	n_workers = 15
 	batch_per_worker = 100
 	batch_size = batch_per_worker * n_workers
-	lambda_ = 0.3 /batch_size
+	lambda_ = 0.03 * batch_per_worker /batch_size
 	reg = 0.000001
 	n_iterations = 1000
 
@@ -225,6 +225,7 @@ if __name__ == "__main__":
 		# computing the gradient step
 		start = time.time()
 		x_batch, y_batch = batch_iter(x_train,y_train,batch_size= batch_size)
+		x_test_batch, y_test_batch = batch_iter(x_test,y_test,batch_size= batch_size)
 	    
 		sgd = sc.parallelize(zip(x_batch,y_batch),numSlices= n_workers) \
 		.mapPartitions(lambda it: train(it,w)) \
@@ -242,9 +243,9 @@ if __name__ == "__main__":
 	    
 		# compute the cost (in case the cost explose, we use a try catch)
 		try:
-			print("compute loss")
-			loss = sc.parallelize(zip(x_batch,y_batch),numSlices= n_workers) \
-			.mapPartitions(lambda it: compute_loss(it,w,lambda_,batch_size)) \
+			print("compute validation loss")
+			loss = sc.parallelize(zip(x_test_batch, y_test_batch),numSlices= n_workers) \
+			.mapPartitions(lambda it: compute_loss(it,w,reg,batch_size)) \
 			.reduce(lambda x,y: x+y)
 			print("the loss is:")
 			print(loss)
@@ -266,11 +267,11 @@ if __name__ == "__main__":
 
 		print('computing validation accuracy')
 		# computing the accuracy
-		acc = sc.parallelize(zip(x_test,y_test), numSlices= n_workers) \
+		acc = sc.parallelize(zip(x_test_batch, y_test_batch), numSlices= n_workers) \
 		.mapPartitions(lambda it: prediction(it,w)) \
 		.mapPartitions(lambda it: accuracy(it)) \
 		.reduce(lambda x,y: x+y)
-		acc = float(acc)/float(len(y_test))
+		acc = float(acc)/float(len(y_test_batch))
 		print('the model as achieved an accuracy of:')
 		print(acc)
 		score_validation.append(acc)
@@ -281,7 +282,7 @@ if __name__ == "__main__":
 	print(total_time)
 	with open('/data/w15.txt','w') as data:
 		data.write(str(w))
-	with open('/data/losses15.txt','w') as data:
+	with open('/data/val_losses15.txt','w') as data:
 		data.write(str(losses))
 	with open('/data/score_val15.txt','w') as data:
 		data.write(str(score_validation))
