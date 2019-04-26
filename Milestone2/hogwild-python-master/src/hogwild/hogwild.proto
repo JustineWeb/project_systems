@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+message Empty {}
+
+message NetworkInfo {
+    repeated string other_workers = 1;
+    repeated int32 val_indices = 2;
+    int32 worker_idx = 3;
+}
+
+message DataSet {
+    message DataPoint {
+        map<int32, float> datapoint = 1;
+        int32 target = 2;
+    }
+    repeated DataPoint datapoints = 1;
+}
+
+message StartMessage {}
+
+message WeightUpdate {
+    map<int32, float> delta_w = 1;
+}
+
+message LossMessage {
+    float loss = 1;
+    string timestamp = 2;
+    int32 worker_idx = 3;
+}
+
+message ReadyToGo {}
+
+message EpochsDone {}
+
+message StopMessage {}
+
+service Hogwild {
+    rpc GetWorkerInfo (NetworkInfo) returns (Empty) {}
+    rpc StartSGD (StartMessage) returns (Empty) {}
+    rpc GetWeightUpdate (WeightUpdate) returns (Empty) {}
+    rpc GetReadyToGo (ReadyToGo) returns (Empty) {}
+    rpc GetEpochsDone (EpochsDone) returns (Empty) {}
+    rpc GetStopMessage (StopMessage) returns (Empty) {}
+    rpc GetLossMessage (LossMessage) returns (Empty) {}
+}
