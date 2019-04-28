@@ -1,7 +1,7 @@
 import random
-from hogwild import ingest_data
-from hogwild import settings as s
-from hogwild.utils import dotproduct, sign
+import ingest_data
+import settings as s
+from utils import dotproduct, sign
 
 
 class SVM:
@@ -27,18 +27,16 @@ class SVM:
         '''
         Calculates the gradient and train loss.
         '''
-        total_delta_w = {}
         train_loss = 0
+        
         for x, label in zip(data, labels):
             xw = dotproduct(x, self.__w)
             if self.__misclassification(xw, label):
                 delta_w = self.__gradient(x, label)
             else:
                 delta_w = self.__regularization_gradient(x)
-                if update:
-                    self.update_weights(delta_w)
             for k, v in delta_w.items():
-                w[k] += self.__getLearningRate() * v
+                self.__w[k] += self.__getLearningRate() * v
             train_loss += max(1 - label * xw, 0)
             train_loss += self.__regularizer(x)
         return train_loss / len(labels)

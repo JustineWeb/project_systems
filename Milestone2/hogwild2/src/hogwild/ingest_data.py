@@ -1,4 +1,4 @@
-from hogwild import settings
+import settings
 
 def generate_dictionary(datapoint):
     ''' Parses and generates a dictionary from one sparse datapoint. '''
