@@ -160,7 +160,7 @@ if __name__ == '__main__':
 
 	# Calculate the predictions on the validation set
 	pred_vals = predict(data_val,w)
-	acc_pos_val, acc_neg_val, acc_tot_val = calculate_accs(targets_val, preds_val)
+	acc_pos_val, acc_neg_val, acc_tot_val = calculate_accs(targets_val, pred_vals)
 	print('Val accuracy of Label 1: {:.2f}%'.format(acc_pos_val))
 	print('Val accuracy of Label -1: {:.2f}%'.format(acc_neg_val))
 	print('Val accuracy: {:.2f}%'.format(acc_tot_val))
@@ -185,7 +185,6 @@ if __name__ == '__main__':
 			'end_time': datetime.utcfromtimestamp(end_time).strftime("%Y-%m-%d %H:%M:%S.%f"),
 			'running_time': end_time - start_time,
 			'n_workers': s.N_WORKERS,
-			'running_mode': s.running_mode,
 			'sync_epochs': n_epochs - 1,
 			'accuracy_train': acc_tot_train,
 			'accuracy_1_train': acc_pos_train,
@@ -196,8 +195,7 @@ if __name__ == '__main__':
 			'accuracy_test': acc_tot_test,
 			'accuracy_1_test': acc_pos_test,
 			'accuracy_-1_test': acc_neg_test,
-			'losses_val': losses_val,
-			'losses_train': hws.train_losses}]
+			'losses_val': losses_val,}]
 
 	with open('log.json', 'w') as outfile:
 		json.dump(log, outfile)
