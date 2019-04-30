@@ -4,28 +4,14 @@ LOCAL_PATH = os.path.join((os.sep)
                           .join(os.path.dirname(os.path.abspath(__file__)).split(os.sep)[0:-2]),
                           'resources/rcv1')
 
-# If testing locally, use localhost:port with different ports for each node/coordinator
-# When running on different machines, can use the same port for all.
-N_WORKERS = os.environ.get('N_WORKERS')
-RUNNING_WHERE = os.environ.get('WHERE') if os.environ.get('WHERE') == 'cluster' else 'local'
-DATA_PATH = os.environ.get('DATA_PATH') if os.environ.get('DATA_PATH') else LOCAL_PATH
-
-TRAIN_FILE = os.path.join(DATA_PATH, 'lyrl2004_vectors_train.dat') if DATA_PATH else ''
-TOPICS_FILE = os.path.join(DATA_PATH, 'rcv1-v2.topics.qrels')
-TEST_FILES = [os.path.join(DATA_PATH, x) for x in ['lyrl2004_vectors_test_pt0.dat',
-                                                   'lyrl2004_vectors_test_pt1.dat',
-                                                   'lyrl2004_vectors_test_pt2.dat',
-                                                   'lyrl2004_vectors_test_pt3.dat']]
-
-running_mode = os.environ.get('RUNNING_MODE') if os.environ.get('RUNNING_MODE') else 'lock_free'
-lock_free = running_mode == 'lock_free'
+TEST_FILES = [os.path.join(DATA_PATH, x) for x in []]
 '''
 reset to use to work
 '''
 N_WORKERS = 5
 TRAIN_FILE = "lyrl2004_vectors_train.dat"
 TOPICS_FILE = "rcv1-v2.topics.qrels"
-TEST_FILES = "lyrl2004_vectors_test_pt0.dat"
+TEST_FILES = ['lyrl2004_vectors_test_pt0.dat', 'lyrl2004_vectors_test_pt1.dat', 'lyrl2004_vectors_test_pt2.dat', 'lyrl2004_vectors_test_pt3.dat']
 lock_free = True
 subset_size = 100  # Number of datapoints to train on each epoch
 # Learning rate for SGD. The term (100/subset_size) is used to adapt convergence to different subset sizes than 100
