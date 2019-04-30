@@ -5,7 +5,6 @@ from multiprocessing.sharedctypes import Array
 from datetime import datetime
 import settings as s
 from EarlyStopping import EarlyStopping
-from svm import SVM
 from utils import calculate_accs
 from time import time
 import ingest_data
